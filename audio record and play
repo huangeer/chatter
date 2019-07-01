@@ -1,0 +1,81 @@
+import pyaudio
+import wave
+input_filename= input('please enter your name!') +'.wav'
+input_filepath = '/home/dengchunxv/音乐/'
+in_path = input_filepath + input_filename
+gd=in_path.split('/')[-1]
+def get_audio(filepath):
+    ga = str(input("是否开始录音？   （是/否）"))
+    if ga == str("是") :
+        CHUNK = 1024
+        FORMAT = pyaudio.paFloat32
+        CHANNELS = 2                # 声道数
+        RATE = 44100                # 采样率
+        RECORD_SECONDS = 10
+        WAVE_OUTPUT_FILENAME = filepath
+        p = pyaudio.PyAudio()
+
+        stream = p.open(format=FORMAT,
+                        channels=CHANNELS,
+                        rate=RATE,
+                        input=True,
+                        frames_per_buffer=CHUNK)
+
+        print("*"*10, "开始录音：请在10秒内输入语音")
+        frames = []
+        for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+            data = stream.read(CHUNK)
+            frames.append(data)
+        print("*"*10, "录音结束\n")
+
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+
+        wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+        wf.setnchannels(CHANNELS)
+        wf.setsampwidth(p.get_sample_size(FORMAT))
+        wf.setframerate(RATE)
+        wf.writeframes(b''.join(frames))
+        wf.close()
+    elif ga == str("否"):
+        exit()
+    else:
+        print("无效输入，请重新选择")
+get_audio(in_path)
+
+import pyaudio
+import wave
+import sys
+sys.argv[1]='/home/dengchunxv/音乐/'
+s_path=sys.argv[1]+input_filename
+from pyaudio import *
+import wave
+
+def play():
+    # 用文本文件记录wave模块解码每一帧所产生的内容。注意这里不是保存为二进制文件
+    dump_buff_file=open(r"joly.dup", 'w')
+    
+    chunk=1                                       # 指定WAV文件的大小
+    wf=wave.open(s_path,'rb')              # 打开WAV文件
+    p=PyAudio()                                   # 初始化PyAudio模块
+    
+    # 打开一个数据流对象，解码而成的帧将直接通过它播放出来，我们就能听到声音啦
+    stream=p.open(format=p.get_format_from_width(wf.getsampwidth()), channels=wf.getnchannels(), rate=wf.getframerate(), output=True)
+ 
+    data = wf.readframes(chunk)      # 读取第一帧数据
+    print(data)                        # 以文本形式打印出第一帧数据，实际上是转义之后的十六进制字符串
+
+    # 播放音频，并使用while循环继续读取并播放后面的帧数
+    # 结束的标志为wave模块读到了空的帧
+    while data != b'':   
+        stream.write(data)                # 将帧写入数据流对象中，以此播放之
+        data = wf.readframes(chunk)            # 继续读取后面的帧
+        dump_buff_file.write(str(data) + "\n---------------------------------------\n")                    # 将读出的帧写入文件中，每一个帧用分割线隔开以便阅读
+        
+    stream.stop_stream()            # 停止数据流
+    stream.close()                        # 关闭数据流
+    p.terminate()                          # 关闭 PyAudio
+    print('play函数结束！')
+
+play()
