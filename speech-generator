@@ -1,0 +1,144 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import hashlib
+import math
+import os
+import random
+import re
+import sys
+import tarfile
+import numpy as np
+
+from six.moves import urllib
+from six.moves import xrange  # pylint: disable=redefined-builtin
+import tensorflow as tf
+
+from tensorflow.python.platform import gfile
+from tensorflow.python.util import compat
+from absl import logging
+
+import os
+from os.path import exists, join, expanduser
+
+os.chdir(expanduser("~"))
+
+wavenet_dir = "wavenet_vocoder"
+if not exists(wavenet_dir):
+  ! git clone https://github.com/r9y9/$wavenet_dir
+    
+taco2_dir = "Tacotron-2"
+if not exists(taco2_dir):
+  ! git clone https://github.com/r9y9/$taco2_dir
+  ! cd $taco2_dir && git checkout -B wavenet3 origin/wavenet3
+  
+# Install dependencies
+! pip install -q -U "numpy<1.16"
+! pip install -q -U "pysptk<=0.1.14"
+
+! pip install -q -U "tensorflow<=1.9.0"
+
+os.chdir(join(expanduser("~"), taco2_dir))
+! pip install -q -r requirements.txt
+
+os.chdir(join(expanduser("~"), wavenet_dir))
+! pip install -q -e '.[train]'
+
+import torch
+import tensorflow
+import pysptk
+import numpy as np
+tensorflow.__version__, pysptk.__version__, np.__version__
+
+os.chdir(join(expanduser("~"), taco2_dir))
+! mkdir -p logs-Tacotron
+if not exists("logs-Tacotron/pretrained"):
+  ! curl -O -L "https://www.dropbox.com/s/vx7y4qqs732sqgg/pretrained.tar.gz"
+  ! tar xzvf pretrained.tar.gz
+  ! mv pretrained logs-Tacotron
+  
+  os.chdir(join(expanduser("~"), wavenet_dir))
+wn_preset = "20180510_mixture_lj_checkpoint_step000320000_ema.json"
+wn_checkpoint_path = "20180510_mixture_lj_checkpoint_step000320000_ema.pth"
+
+if not exists(wn_preset):
+  !curl -O -L "https://www.dropbox.com/s/0vsd7973w20eskz/20180510_mixture_lj_checkpoint_step000320000_ema.json"
+if not exists(wn_checkpoint_path):
+  !curl -O -L "https://www.dropbox.com/s/zdbfprugbagfp2w/20180510_mixture_lj_checkpoint_step000320000_ema.pth"
+  
+os.chdir(join(expanduser("~"), taco2_dir))
+
+%%bash
+cat << EOS > text_list.txt
+Hello！My name is trick!
+It's true.We are best friend,i'll beg the answer for you in the heaven.May the god love you, kid.
+Thanks for your patience.
+EOS
+
+cat text_list.txt
+
+# Remove old files if exist
+! rm -rf tacotron_output
+! python synthesize.py --model='Tacotron' --mode='eval' \
+  --hparams='symmetric_mels=False,max_abs_value=4.0,power=1.1,outputs_per_step=1' \
+  --text_list=./text_list.txt
+  
+import librosa.display
+import IPython
+from IPython.display import Audio
+import numpy as np
+import torch
+
+os.chdir(join(expanduser("~"), wavenet_dir))
+
+# Setup WaveNet vocoder hparams
+from hparams import hparams
+with open(wn_preset) as f:
+    hparams.parse_json(f.read())
+
+# Setup WaveNet vocoder
+from train import build_model
+from synthesis import wavegen
+import torch
+
+use_cuda = torch.cuda.is_available()
+device = torch.device("cuda" if use_cuda else "cpu")
+
+model = build_model().to(device)
+
+print("Load checkpoint from {}".format(wn_checkpoint_path))
+checkpoint = torch.load(wn_checkpoint_path)
+model.load_state_dict(checkpoint["state_dict"])
+
+from glob import glob
+from tqdm import tqdm
+
+with open("../Tacotron-2/tacotron_output/eval/map.txt") as f:
+  maps = f.readlines()
+maps = list(map(lambda x:x[:-1].split("|"), maps))
+# filter out invalid ones
+maps = list(filter(lambda x:len(x) == 2, maps))
+
+print("List of texts to be synthesized")
+for idx, (text,_) in enumerate(maps):
+  print(idx, text)
+  
+waveforms = []
+
+for idx, (text, mel) in enumerate(maps):
+  print("\n", idx, text)
+  mel_path = join("../Tacotron-2", mel)
+  c = np.load(mel_path)
+  if c.shape[1] != hparams.num_mels:
+    np.swapaxes(c, 0, 1)
+  # Range [0, 4] was used for training Tacotron2 but WaveNet vocoder assumes [0, 1]
+  c = np.interp(c, (0, 4), (0, 1))
+ 
+  # Generate
+  waveform = wavegen(model, c=c, fast=True, tqdm=tqdm)
+  
+  waveforms.append(waveform)
+
+  # Audio
+  IPython.display.display(Audio(waveform, rate=hparams.sample_rate))
