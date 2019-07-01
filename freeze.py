@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
-import os.path
+import os
 import sys
 
 import tensorflow as tf
@@ -38,8 +38,10 @@ def create_inference_graph(wanted_words, sample_rate, clip_duration_ms,
       len(words_list), sample_rate, clip_duration_ms, window_size_ms,
       window_stride_ms, feature_bin_count, preprocess)
   runtime_settings = {'clip_stride_ms': clip_stride_ms}
-
-  wav_data_placeholder = tf.placeholder(tf.string, [], name='wav_data')
+  
+  wav_filename = data_url.split('/')[-1]
+  filepath = os.path.join(data_dir, wav_filename)
+  wav_data = tf.io.read_file(filepath)
   decoded_sample_data = contrib_audio.decode_wav(
       wav_data_placeholder,
       desired_channels=1,
@@ -77,14 +79,29 @@ def create_inference_graph(wanted_words, sample_rate, clip_duration_ms,
   # Create an output to use for inference.
   tf.nn.softmax(logits, name='labels_softmax')
 def main(_):
-
-  # Create the model and load its weights.
   create_inference_graph(
       FLAGS.wanted_words, FLAGS.sample_rate, FLAGS.clip_duration_ms,
       FLAGS.clip_stride_ms, FLAGS.window_size_ms, FLAGS.window_stride_ms,
       FLAGS.feature_bin_count, FLAGS.model_architecture, FLAGS.preprocess)
+  FLAGS.wanted_words=tf.convert_to_tensor(FLAGS.wanted_words)
+  FLAGS.sample_rate=tf.convert_to_tensor(FLAGS.sample_rate)
+  FLAGS.clip_duration_ms=tf.convert_to_tensor(FLAGS.clip_duration_ms)
+  FLAGS.clip_stride_ms=tf.convert_to_tensor(FLAGS.clip_stride_ms)
+  FLAGS.window_size_ms=tf.convert_to_tensor(FLAGS.window_size_ms)
+  FLAGS.window_stride_ms=tf.convert_to_tensor(FLAGS.window_stride_ms)
+  FLAGS.feature_bin_count=tf.convert_to_tensor(FLAGS.feature_bin_count)
+  FLAGS.model_architecture=tf.convert_to_tensor(FLAGS.model_architecture)
+  FLAGS.preprocess=tf.convert_to_tensor(FLAGS.preprocess)
   if FLAGS.quantize:
-    tf.contrib.quantize.create_eval_graph()
+    tf.quantization.fake_quant_with_min_max_args(FLAGS.wanted_words,min=-6,max=6,num_bits=8,narrow_range=False,name=None)
+    tf.quantization.fake_quant_with_min_max_args(FLAGS.sample_rate,min=-6,max=6,num_bits=8,narrow_range=False,name=None)
+    tf.quantization.fake_quant_with_min_max_args(FLAGS.clip_duration_ms,min=-6,max=6,num_bits=8,narrow_range=False,name=None)
+    tf.quantization.fake_quant_with_min_max_args(FLAGS.clip_stride_ms,min=-6,max=6,num_bits=8,narrow_range=False,name=None)
+    tf.quantization.fake_quant_with_min_max_args(FLAGS.window_size_ms,min=-6,max=6,num_bits=8,narrow_range=False,name=None)
+    tf.quantization.fake_quant_with_min_max_args(FLAGS.window_stride_ms,min=-6,max=6,num_bits=8,narrow_range=False,name=None)
+    tf.quantization.fake_quant_with_min_max_args(FLAGS.feature_bin_count,min=-6,max=6,num_bits=8,narrow_range=False,name=None)
+    tf.quantization.fake_quant_with_min_max_args(FLAGS.model_architecture,min=-6,max=6,num_bits=8,narrow_range=False,name=None)
+    tf.quantization.fake_quant_with_min_max_args(FLAGS.preprocess,min=-6,max=6,num_bits=8,narrow_range=False,name=None)
   models.load_variables_from_checkpoint(FLAGS.start_checkpoint)
 
   # Turn all the variables into inline constants inside the graph and save it.
@@ -96,6 +113,8 @@ def main(_):
       os.path.basename(FLAGS.output_file),
       as_text=False)
   logging.info('Saved frozen graph to %s', FLAGS.output_file)
+  # Create the model and load its weights.
+  
 
 
 if __name__ == '__main__':
@@ -160,3 +179,4 @@ if __name__ == '__main__':
       help='Spectrogram processing mode. Can be "mfcc" or "average"')
   FLAGS, unparsed = parser.parse_known_args()
   argv=[sys.argv[0]] + unparsed
+  main(_)
