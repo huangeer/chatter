@@ -41,20 +41,22 @@ FLAGS = None
 
 def load_graph(filename):
   """Unpersists graph from file as default graph."""
-  with tf.gfile.GFile(filename, 'rb') as f:
-    graph_def = tf.GraphDef()
+  with tf.compat.v1.gfile.GFile(filename, 'rb') as f:
+    graph_def = tf.compat.v1.GraphDef()
     graph_def.ParseFromString(f.read())
-    tf.import_graph_def(graph_def, name='')
+    tf.compat.v1.import_graph_def(graph_def, name='')
 
 
 def load_labels(filename):
   """Read in labels, one label per line."""
-  return [line.rstrip() for line in tf.gfile.GFile(filename)]
+  return [line.rstrip() for line in tf.compat.v1.gfile.GFile(filename)]
 
 
 def run_graph(wav_data, labels, input_layer_name, output_layer_name,
               num_top_predictions):
   """Runs the audio data through the graph and prints predictions."""
+  
+  ####以下将静态图换成运行脚本
   with tf.Session() as sess:
     # Feed the audio data as input to the graph.
     #   predictions  will contain a two-dimensional array, where one
@@ -75,7 +77,7 @@ def run_graph(wav_data, labels, input_layer_name, output_layer_name,
 
 def label_wav(wav, labels, graph, input_name, output_name, how_many_labels):
   """Loads the model and labels, and runs the inference to print predictions."""
-  if not wav or not tf.gfile.Exists(wav):
+  if not wav or not tf.compat.v1.gfile.Exists(wav):
     logging.fatal('Audio file does not exist %s', wav)
 
   if not labels or not tf.gfile.Exists(labels):
