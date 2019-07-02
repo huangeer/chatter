@@ -5,6 +5,7 @@ from __future__ import print_function
 from tensorflow.contrib.summary import summary
 from tensorflow.python.ops import audio_ops as contrib_audio
 from tensorflow.examples.speech_command import model
+from tensorflow.examples.speech_command import input_data
 
 import hashlib
 import math
