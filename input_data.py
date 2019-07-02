@@ -245,8 +245,8 @@ class AudioProcessor(object):
   def execute_above(self,data_url,data_dir,silence_percentage, unknown_percentage, 
                               wanted_words, validation_percentage,
                               testing_percentage):
-    maybe_download_and_extract_dataset(data_url, data_dir)
-    prepare_data_index(silence_percentage, unknown_percentage, 
+    self.maybe_download_and_extract_dataset(data_url, data_dir)
+    self.prepare_data_index(silence_percentage, unknown_percentage, 
                               wanted_words, validation_percentage,
                               testing_percentage)
     prepare_background_data()
