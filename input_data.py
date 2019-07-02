@@ -77,9 +77,6 @@ class AudioProcessor(object):
                               wanted_words, validation_percentage,
                               testing_percentage)
       self.prepare_background_data()
-    self.execute_above(data_url,data_dir,silence_percentage, unknown_percentage, 
-                              wanted_words, validation_percentage,
-                              testing_percentage)
   ####(2)
   def maybe_download_and_extract_dataset(self, data_url, dest_directory):
     """Download and extract data set tar file.
@@ -242,14 +239,6 @@ class AudioProcessor(object):
       raise Exception('No background wav files were found in ' + search_path)
   
   ####(5)
-  def execute_above(self,data_url,data_dir,silence_percentage, unknown_percentage, 
-                              wanted_words, validation_percentage,
-                              testing_percentage):
-    self.maybe_download_and_extract_dataset(data_url, data_dir)
-    self.prepare_data_index(silence_percentage, unknown_percentage, 
-                              wanted_words, validation_percentage,
-                              testing_percentage)
-    prepare_background_data()
     
   def set_size(self, mode):
     """Calculates the number of samples in the dataset partition.
