@@ -186,7 +186,7 @@ model_settings = model.prepare_model_settings(
       FLAGS.sample_rate, FLAGS.clip_duration_ms, FLAGS.window_size_ms,
       FLAGS.window_stride_ms, FLAGS.feature_bin_count, FLAGS.preprocess)
 
-audio_processor = AudioProcessor(
+audio_processor = input_data.AudioProcessor(
       FLAGS.data_url, FLAGS.data_dir,
       FLAGS.silence_percentage, FLAGS.unknown_percentage,
       FLAGS.wanted_words.split(','), FLAGS.validation_percentage,
