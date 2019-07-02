@@ -181,7 +181,7 @@ FLAGS, unparsed = parser.parse_known_args()
 
 logging.set_verbosity(logging.INFO)
 model_settings = model.prepare_model_settings(
-      len(prepare_words_list(FLAGS.wanted_words.split(','))),
+      len(input_data.prepare_words_list(FLAGS.wanted_words.split(','))),
       FLAGS.sample_rate, FLAGS.clip_duration_ms, FLAGS.window_size_ms,
       FLAGS.window_stride_ms, FLAGS.feature_bin_count, FLAGS.preprocess)
 
@@ -235,7 +235,7 @@ for training_step in xrange(start_step, training_steps_max + 1):
     learning_rate_input=learning_rate_value
     dropout_prob=0.5
     
-    logits, dropout_prob = create_model(
+    logits, dropout_prob = model.create_model(
         fingerprint_input,
         model_settings,
         FLAGS.model_architecture,
