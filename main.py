@@ -314,8 +314,8 @@ for training_step in xrange(start_step, training_steps_max + 1):
         predicted_indices = tf.dtypes.cast(predicted_indices, dtype=tf.dtypes.int64)
         ground_truth_input = tf.dtypes.cast(ground_truth_input, dtype=tf.dtypes.int64)
         correct_prediction = tf.math.equal(predicted_indices, ground_truth_input)
-        ground_truth_input = ground_truth_input.reshape([1,-1])
-        predicted_indices = predicted_indices.reshape([1,-1])
+        ground_truth_input = tf.reshape(ground_truth_input,[1,-1])
+        predicted_indices = tf.reshape(predicted_indices,[1,-1])
         confusion_matrix = tf.math.confusion_matrix(
                                    ground_truth_input, predicted_indices, num_classes=label_count)
         evaluation_step = tf.math.reduce_mean(tf.dtypes.cast(correct_prediction, tf.float32))
