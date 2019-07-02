@@ -1,9 +1,9 @@
-from tensorflow.contrib.summary import summary
-from tensorflow.python.ops import audio_ops as contrib_audio ####用的是旧版的脚本
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
+from tensorflow.contrib.summary import summary
+from tensorflow.python.ops import audio_ops as contrib_audio ####用的是旧版的脚本
 
 import hashlib
 import math
