@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from tensorflow.contrib.summary import summary
 from tensorflow.python.ops import audio_ops as contrib_audio
+from tensorflow.examples.speech_command import model
 
 import hashlib
 import math
@@ -179,7 +180,7 @@ parser.add_argument(
 FLAGS, unparsed = parser.parse_known_args()
 
 logging.set_verbosity(logging.INFO)
-model_settings = prepare_model_settings(
+model_settings = model.prepare_model_settings(
       len(prepare_words_list(FLAGS.wanted_words.split(','))),
       FLAGS.sample_rate, FLAGS.clip_duration_ms, FLAGS.window_size_ms,
       FLAGS.window_stride_ms, FLAGS.feature_bin_count, FLAGS.preprocess)
