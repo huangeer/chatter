@@ -250,11 +250,12 @@ for training_step in xrange(start_step, training_steps_max + 1):
       c_without_any_args = functools.partial(cross_entropy_mean, x=ground_truth_input_tensor, y=logits_tensor) 
       train_step = tf.keras.optimizers.SGD(lr=learning_rate_input, momentum=0.0, 
                                            decay=0.0, nesterov=False).minimize(c_without_any_args,logits_tensor)
+    ground_truth_input_tensor=tf.reshape(ground_truth_input_tensor,[100,1])
     predicted_indices = tf.math.argmax(logits, 1)
     correct_prediction = tf.math.equal(predicted_indices, ground_truth_input)
 
     confusion_matrix = tf.math.confusion_matrix(
-                              ground_truth_input, predicted_indices, num_classes=label_count)
+                              ground_truth_input_tensor, predicted_indices, num_classes=label_count)
 
     evaluation_step = tf.math.reduce_mean(tf.dtypes.cast(correct_prediction, tf.float64))
 
@@ -307,16 +308,23 @@ for training_step in xrange(start_step, training_steps_max + 1):
         fingerprint_input = validation_fingerprints,
         ground_truth_input = validation_ground_truth,
         dropout_prob=1.0
-        
+        ground_truth_input_tensor=tf.Variable(tf.convert_to_tensor(ground_truth_input))
+        logits, dropout_prob = model.create_model(
+                               fingerprint_input,
+                               model_settings,
+                               FLAGS.model_architecture,
+                               is_training=True)
+        logits_tensor=tf.Variable(tf.convert_to_tensor(logits))
         with tf.name_scope('cross_entropy'):
           cross_entropy_mean = tf.keras.losses.sparse_categorical_crossentropy(
-                                                ground_truth_input, logits)
+                                                ground_truth_input_tensor, logits_tensor)
         predicted_indices = tf.math.argmax(logits, 1)
         predicted_indices = tf.dtypes.cast(predicted_indices, dtype=tf.dtypes.int64)
         ground_truth_input = tf.dtypes.cast(ground_truth_input, dtype=tf.dtypes.int64)
+        ground_truth_input_tensor=tf.reshape(ground_truth_input_tensor,[predicted_indices.shape[0],])
         correct_prediction = tf.math.equal(predicted_indices, ground_truth_input)
         confusion_matrix = tf.math.confusion_matrix(
-                                   ground_truth_input, predicted_indices, num_classes=label_count)
+                                   ground_truth_input_tensor, predicted_indices, num_classes=label_count)
         evaluation_step = tf.math.reduce_mean(tf.dtypes.cast(correct_prediction, tf.float32))
         with tf.name_scope('eval'):
           tf.summary.histogram('cross_entropy', cross_entropy_mean)
